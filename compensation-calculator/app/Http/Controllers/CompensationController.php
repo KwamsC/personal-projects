@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Compensation;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Http;
+use Carbon\Carbon;
+use Money\Currencies\ISOCurrencies;
+use Money\Parser\IntlMoneyParser;
+
 
 class CompensationController extends Controller
 {
@@ -14,7 +19,7 @@ class CompensationController extends Controller
         return view('compensation.create');
     }
 
-    public function calculateCompensation()
+    public function compensate()
     {
         $formFields = request()->validate([
             'product' => 'required|min:2',
@@ -29,35 +34,43 @@ class CompensationController extends Controller
 
         $queryProducts = explode(',', request()->all()['product']);
 
-        // Dates
-        $startDate = date_create(request()->all()['start_date']);
-        $endDate = date_create(request()->all()['end_date']);
+        $searchedProducts = Product::whereIn('product', $queryProducts)->get();
 
-        // $allProducts = collect();
-        $allProducts = [];
+        $outageStartDate = request()->all()['start_date'];
+        $outageEndDate = request()->all()['end_date'];
 
-        foreach ($queryProducts as $key) {
-            $productItems = Product::whereProduct(trim($key))->get();
+        $compensationItems = collect();
 
-            // if ($productItems->contains(1)) {
-            // $allProducts->push($productItems);
-            array_push($allProducts, $productItems);
-            // }
+        $searchedProducts->each(function ($product) use ($outageStartDate, $outageEndDate, $compensationItems) {
+            $compensationPrice = $this->calculateCompensation($product, $outageStartDate, $outageEndDate);
+            $productName = $product['product'];
 
-            // dd($productItems);
+            $compensationItems->push([
+                'product' => $productName,
+                'compensation_price' => $compensationPrice,
+            ]);
+        });
 
-            // $product =  P
-            // array_push($products, $productItem);
-        }
-        dd($allProducts);
+        dd($compensationItems);
+    }
 
-        // dd($products);
+    public function calculateCompensation($product, $startDate, $endDate)
+    {
+        $outageStart = Carbon::parse($startDate);
+        $outageEnd = Carbon::parse($endDate)->addDay();
 
-        // dd(request()->all());
+        $daysInMonth = $outageStart->daysInMonth;
+        $diffInDays = $outageStart->diffInDays($outageEnd);
 
-        // $products = Product::whereProduct('Film1')->get();
+        $percentage = $diffInDays / $daysInMonth;
 
-        // dd($products);
-        // dd(request()->all());
+        $currencies = new ISOCurrencies();
+
+        $numberFormatter = new \NumberFormatter('nl_NL', \NumberFormatter::CURRENCY);
+        $moneyParser = new IntlMoneyParser($numberFormatter, $currencies);
+
+        $money = $moneyParser->parse($product['price']);
+
+        return $money->getAmount() * $percentage;
     }
 }

@@ -30,7 +30,7 @@ Route::get('/', [ProductController::class, 'index']);
 
 Route::get('/compensation', [CompensationController::class, 'create']);
 
-Route::post('/compensation/create', [CompensationController::class, 'calculateCompensation']);
+Route::post('/compensation/create', [CompensationController::class, 'compensate']);
 
 Route::get('/product/{id}', [ProductController::class, 'show'])->where('id', '[0-9]+');
 // Route::get('/search', function (Request $request) {
