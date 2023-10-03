@@ -3,7 +3,7 @@
         <form method="post" action="{{ url('compensation/create') }}"
             class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
             @csrf
-            {{-- Product --}}
+            {{-- PRODUCT --}}
             <div class="mb-6">
                 <label class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2" for="product">
                     Products
@@ -16,7 +16,7 @@
                 @enderror
             </div>
 
-            {{-- Dates --}}
+            {{-- DATES --}}
             <div class="flex gap-3">
                 {{-- Start date --}}
                 <div class="mb-6">
@@ -42,10 +42,9 @@
 
             </div>
 
-            {{-- Whole month calculation --}}
+            {{-- WHOLE MONTH CALCULATION --}}
             <div>
-                <input type="checkbox" id="whole_month_calculation" name="whole_month_calculation"
-                    value="{{ old('whole_month_calculation') }}" />
+                <input type="checkbox" id="whole_month_calculation" name="whole_month_calculation" value="1" />
                 <label for="whole_month_calculation">Whole month calculation</label>
             </div>
 

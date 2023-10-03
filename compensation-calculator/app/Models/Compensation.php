@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use App\Casts\MoneyCast;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Compensation extends Model
 {
@@ -16,8 +16,8 @@ class Compensation extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'product_name',
         'price',
-        'product'
     ];
 
     /**
