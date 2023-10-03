@@ -3,11 +3,10 @@
 namespace App\Casts;
 
 use Money\Money;
-use Money\Currency;
+use Money\Parser\IntlMoneyParser;
 use Money\Currencies\ISOCurrencies;
 use Illuminate\Database\Eloquent\Model;
 use Money\Formatter\IntlMoneyFormatter;
-use Money\Parser\IntlLocalizedDecimalParser;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 
 class MoneyCast implements CastsAttributes
@@ -25,6 +24,27 @@ class MoneyCast implements CastsAttributes
     }
 
     /**
+     * Parses or formats money value.
+     *
+     * @param string $type Either 'parser' or 'formatter'.
+     *
+     * @return IntlMoneyFormatter|IntlMoneyParser|null
+     */
+    public static function getFormatterOrParser($type)
+    {
+        $currencies = new ISOCurrencies();
+        $numberFormatter = new \NumberFormatter('nl_NL', \NumberFormatter::CURRENCY);
+
+        if ($type === 'parser') {
+            return new IntlMoneyParser($numberFormatter, $currencies);
+        } else if ($type === 'formatter') {
+            return new IntlMoneyFormatter($numberFormatter, $currencies);
+        }
+
+        return null;
+    }
+
+    /**
      * Cast the given value.
      *
      * @param  array<string, mixed>  $attributes
@@ -32,14 +52,9 @@ class MoneyCast implements CastsAttributes
     public function get(Model $model, string $key, mixed $value, array $attributes): mixed
     {
         $money = Money::EUR($attributes['price']);
-        $currencies = new ISOCurrencies();
-
-        $numberFormatter = new \NumberFormatter('nl_NL', \NumberFormatter::CURRENCY);
-        $moneyFormatter = new IntlMoneyFormatter($numberFormatter, $currencies);
+        $moneyFormatter = $this->getFormatterOrParser('formatter');
 
         return $moneyFormatter->format($money);
-
-        // return Money::EUR($attributes['price']);
     }
 
     /**
@@ -49,15 +64,12 @@ class MoneyCast implements CastsAttributes
      */
     public function set(Model $model, string $key, mixed $value, array $attributes): mixed
     {
+        if (is_int($value))
+            return $value;
 
-        $currencies = new ISOCurrencies();
-
-        $numberFormatter = new \NumberFormatter('nl_NL', \NumberFormatter::DECIMAL);
-        $moneyParser = new IntlLocalizedDecimalParser($numberFormatter, $currencies);
-
-        $money = $moneyParser->parse($value, new Currency('EUR'));
+        $moneyParser = $this->getFormatterOrParser('parser');
+        $money = $moneyParser->parse($value);
 
         return $money->getAmount();
-        // return [$this->price => (int) $value];
     }
 }

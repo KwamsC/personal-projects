@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Casts\MoneyCast;
+use App\Http\Requests\StoreCompensationIndexRequest;
 use App\Models\Compensation;
 use App\Models\Product;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
 use Money\Currencies\ISOCurrencies;
 use Money\Parser\IntlMoneyParser;
@@ -19,44 +18,53 @@ class CompensationController extends Controller
         return view('compensation.create');
     }
 
-    public function compensate()
+    public function index()
     {
-        $formFields = request()->validate([
-            'product' => 'required|min:2',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date',
-        ], [
-            'product.required' => 'Product field is required.',
-            'product.min' => 'Invalid product name',
-            'start_date.required' => 'Start date field is required.',
-            'end_date.required' => 'End date field is required.',
+        return view('compensation.index', [
+            'compensations' => Compensation::latest()->get()
         ]);
+    }
 
-        $queryProducts = explode(',', request()->all()['product']);
+    public function compensate(StoreCompensationIndexRequest $request)
+    {
+        $formFields = $request->validated();
 
-        $searchedProducts = Product::whereIn('product', $queryProducts)->get();
+        // request variables
+        $productNames = array_map('trim', explode(',', $formFields['product']));
+        $outageStartDate = $formFields['start_date'];
+        $outageEndDate = $formFields['end_date'];
+        $wholeMonthCalculation = request()->has('whole_month_calculation');
 
-        $outageStartDate = request()->all()['start_date'];
-        $outageEndDate = request()->all()['end_date'];
+        $queriedProducts = $this->getQueriedProducts($productNames);
 
-        $compensationItems = collect();
+        $queriedProducts->each(function ($product) use ($outageStartDate, $outageEndDate,  $wholeMonthCalculation) {
+            $compensationPrice = $wholeMonthCalculation
+                ? $product->price
+                : $this->calculateCompensation($product->price, $outageStartDate, $outageEndDate);
 
-        $searchedProducts->each(function ($product) use ($outageStartDate, $outageEndDate, $compensationItems) {
-            $compensationPrice = $this->calculateCompensation($product, $outageStartDate, $outageEndDate);
-            $productName = $product['product'];
-
-            $compensationItems->push([
-                'product' => $productName,
-                'compensation_price' => $compensationPrice,
+            Compensation::create([
+                'product_name' =>  $product->product,
+                'price' => $compensationPrice,
             ]);
         });
 
-        dd($compensationItems);
+        return view('compensation.index', [
+            'compensations' => Compensation::latest()->get()
+        ]);
     }
 
-    public function calculateCompensation($product, $startDate, $endDate)
+    protected function getQueriedProducts($productNames)
+    {
+        return Product::whereIn('product', $productNames)->get()
+            ->groupBy('product')->map(function ($group) {
+                return $group->sortByDesc('startDate')->first();
+            })->values();
+    }
+
+    protected function calculateCompensation($price, $startDate, $endDate)
     {
         $outageStart = Carbon::parse($startDate);
+
         $outageEnd = Carbon::parse($endDate)->addDay();
 
         $daysInMonth = $outageStart->daysInMonth;
@@ -64,13 +72,9 @@ class CompensationController extends Controller
 
         $percentage = $diffInDays / $daysInMonth;
 
-        $currencies = new ISOCurrencies();
+        $parser = MoneyCast::getFormatterOrParser('parser');
+        $money = $parser->parse($price);
 
-        $numberFormatter = new \NumberFormatter('nl_NL', \NumberFormatter::CURRENCY);
-        $moneyParser = new IntlMoneyParser($numberFormatter, $currencies);
-
-        $money = $moneyParser->parse($product['price']);
-
-        return $money->getAmount() * $percentage;
+        return intval($money->getAmount() * $percentage);
     }
 }
