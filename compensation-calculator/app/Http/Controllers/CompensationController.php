@@ -48,9 +48,7 @@ class CompensationController extends Controller
             ]);
         });
 
-        return view('compensation.index', [
-            'compensations' => Compensation::latest()->get()
-        ]);
+        return redirect('/compensations')->with('message', 'Compensation created succesfully');
     }
 
     protected function getQueriedProducts($productNames)
