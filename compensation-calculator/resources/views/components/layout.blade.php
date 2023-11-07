@@ -9,11 +9,7 @@
 </head>
 
 <body>
-    <header class="top-0 mx-5 flex h-20 max-w-screen-xl items-center justify-between w-full">
-        <nav>
-            <h2 class="text-3xl font-bold">Compensation calculator</h2>
-        </nav>
-    </header>
+    @include('partials._header')
     <x-flash-message />
     <main class="m-5 max-w-screen-xl items-center justify-between">
         {{ $slot }}

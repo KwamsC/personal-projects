@@ -1,6 +1,6 @@
 <x-layout>
     <div class="w-full max-w-sm">
-        <form method="post" action="{{ url('compensation/create') }}"
+        <form method="post" action="{{ url('compensations/create') }}"
             class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
             @csrf
             {{-- PRODUCT --}}

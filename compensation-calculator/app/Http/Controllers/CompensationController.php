@@ -2,31 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use App\Casts\MoneyCast;
-use App\Http\Requests\StoreCompensationIndexRequest;
-use App\Models\Compensation;
-use App\Models\Product;
 use Carbon\Carbon;
-use Money\Currencies\ISOCurrencies;
-use Money\Parser\IntlMoneyParser;
-
+use App\Models\Product;
+use App\Casts\MoneyCast;
+use App\Models\Compensation;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\StoreCompensationIndexRequest;
 
 class CompensationController extends Controller
 {
     public function create()
     {
-        return view('compensation.create');
+        return view('compensations.create');
     }
 
     public function index()
     {
-        return view('compensation.index', [
-            'compensations' => Compensation::latest()->get()
+        return view('compensations.index', [
+            'compensationList' => Compensation::latest()->get()
         ]);
     }
 
     public function compensate(StoreCompensationIndexRequest $request)
     {
+        if
         $formFields = $request->validated();
 
         // request variables
@@ -45,6 +44,7 @@ class CompensationController extends Controller
             Compensation::create([
                 'product_name' =>  $product->product,
                 'price' => $compensationPrice,
+                'user_id' => auth()->id()
             ]);
         });
 
@@ -74,5 +74,12 @@ class CompensationController extends Controller
         $money = $parser->parse($price);
 
         return intval($money->getAmount() * $percentage);
+    }
+
+    public function manage()
+    {
+        return view('compensations.manage', [
+            'compensations' => Auth::user()->compensations()->get(),
+        ]);
     }
 }

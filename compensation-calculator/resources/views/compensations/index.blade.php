@@ -11,7 +11,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach ($compensations as $compensation)
+            @foreach ($compensationList as $compensation)
                 <tr class="bg-white border-b dark:bg-gray-900 dark:border-gray-700">
                     <td class="px-6 py-4">{{ $compensation['product_name'] }}</td>
                     <td class="px-6 py-4">{{ $compensation['price'] }}</td>
@@ -20,7 +20,7 @@
         </tbody>
     </table>
 
-    @if (count($compensations) == 0)
+    @if (count($compensationList) == 0)
         <p>no listings found</p>
     @endif
 </x-layout>

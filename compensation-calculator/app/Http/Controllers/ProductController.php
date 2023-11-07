@@ -11,7 +11,7 @@ class ProductController extends Controller
     public function index()
     {
         return view('products.index', [
-            'products' => Product::latest()->filter(request(['group', 'search']))->get()
+            'products' => Product::latest()->filter(request(['group', 'search']))->paginate(5)
         ]);
     }
 

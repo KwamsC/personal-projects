@@ -10,6 +10,8 @@ class Compensation extends Model
 {
     use HasFactory;
 
+    protected $table = 'compensations';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -18,6 +20,7 @@ class Compensation extends Model
     protected $fillable = [
         'product_name',
         'price',
+        'user_id'
     ];
 
     /**
@@ -28,4 +31,14 @@ class Compensation extends Model
     protected $casts = [
         'price' => MoneyCast::class . ':price',
     ];
+
+    /**
+     * Get the user that owns the Compensation
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }
