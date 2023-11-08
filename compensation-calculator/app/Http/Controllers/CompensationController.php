@@ -25,7 +25,6 @@ class CompensationController extends Controller
 
     public function compensate(StoreCompensationIndexRequest $request)
     {
-        if
         $formFields = $request->validated();
 
         // request variables
